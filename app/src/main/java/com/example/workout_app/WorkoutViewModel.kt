@@ -32,4 +32,8 @@ class WorkoutViewModel(private val storage: WorkoutStorage) : ViewModel() {
     fun saveWorkouts() {
         storage.saveWorkouts(_workouts)
     }
+
+    fun getAllExerciseNames() : List<String> {
+        return _workouts.flatMap { it.exercises }.map { it.name }.distinct()
+    }
 }

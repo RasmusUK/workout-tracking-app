@@ -192,9 +192,9 @@ fun ExerciseCard(exercise: Exercise, onSetDelete: (Int) -> Unit, onExerciseDelet
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun WorkoutScreen(workout: Workout, onWorkoutDelete: () -> Unit, navController: NavController, save: () -> Unit) {
+fun WorkoutScreen(workout: Workout, onWorkoutDelete: () -> Unit, navController: NavController, save: () -> Unit, exerciseOptions: List<String>) {
     var showDialog by remember { mutableStateOf(false) }
-    var newExerciseName by remember { mutableStateOf("") }
+    var selectedExercise by remember { mutableStateOf("") }
     var showWorkoutDeleteDialog by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -248,19 +248,18 @@ fun WorkoutScreen(workout: Workout, onWorkoutDelete: () -> Unit, navController: 
                 onDismissRequest = { showDialog = false },
                 title = { Text("Add exercise") },
                 text = {
-                    TextField(
-                        value = newExerciseName,
-                        onValueChange = { newExerciseName = it },
-                        label = { Text("Name") },
-                        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences)
+                    CustomDropdownMenu(
+                        options = exerciseOptions,
+                        selectedOption = selectedExercise,
+                        onOptionSelected = { selectedExercise = it }
                     )
                 },
                 confirmButton = {
                     Button(onClick = {
-                        if (newExerciseName.isNotBlank()) {
-                            workout.exercises.add(Exercise(name = newExerciseName))
+                        if (selectedExercise.isNotBlank()) {
+                            workout.exercises.add(Exercise(name = selectedExercise.trim()))
                             save()
-                            newExerciseName = ""
+                            selectedExercise = ""
                             showDialog = false
                         }
                     }) {

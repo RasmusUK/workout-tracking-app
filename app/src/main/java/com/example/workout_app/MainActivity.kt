@@ -48,7 +48,7 @@ fun AppNavigation(viewModel: WorkoutViewModel)
             val workoutId = backStackEntry.arguments?.getString("workoutId")
             val workout = viewModel.getWorkoutFromId(workoutId)
             if (workout != null) {
-                WorkoutScreen(workout, { viewModel.deleteWorkout(workout) } ,navController, { viewModel.saveWorkouts() })
+                WorkoutScreen(workout, { viewModel.deleteWorkout(workout) } ,navController, { viewModel.saveWorkouts() }, viewModel.getAllExerciseNames())
             }
         }
     }
