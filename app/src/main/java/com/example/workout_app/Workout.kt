@@ -1,11 +1,14 @@
 package com.example.workout_app
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
@@ -13,6 +16,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -27,44 +31,47 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.UUID
-import kotlin.text.format
 
 data class Workout(
     var name: String,
     var id: UUID = UUID.randomUUID(),
-    val exercises: MutableList<Exercise> = mutableListOf(),
+    val exercises: MutableList<Exercise> = mutableStateListOf(),
     val date: Date = Date(),
     val dateString: String = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(date)
 )
 
 data class Exercise(
     val name: String,
-    val sets: MutableList<Set> = mutableListOf()
-)
+    val sets: MutableList<Set> = mutableStateListOf()
+    )
 
 data class Set(
     val reps: Int,
-    val weight: Double
-)
+    val weight: Double,
+    )
 
 @Composable
-fun ExerciseCard(exercise: Exercise) {
+fun ExerciseCard(exercise: Exercise, onSetDelete: (Int) -> Unit, onExerciseDelete: () -> Unit) {
     var newReps by remember { mutableStateOf("") }
     var newWeight by remember { mutableStateOf("") }
     var showDialog by remember { mutableStateOf(false) }
+    var showExerciseDeleteDialog by remember { mutableStateOf(false) } // Add state for exercise delete dialog
+    var showSetDeleteDialog by remember { mutableStateOf(false) } // Add state for set delete dialog
+    var setToDelete by remember { mutableStateOf<Int?>(null) }
 
     Card(
         modifier = Modifier
@@ -75,13 +82,34 @@ fun ExerciseCard(exercise: Exercise) {
             modifier = Modifier
                 .padding(16.dp)
         ) {
-            Text(
-                text = exercise.name,
-                style = MaterialTheme.typography.bodyLarge
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = exercise.name,
+                    style = MaterialTheme.typography.titleMedium
+                )
+                IconButton(onClick = { showExerciseDeleteDialog = true }) {
+                    Icon(Icons.Filled.Delete, contentDescription = "Delete exercise")
+                }
+            }
             Spacer(modifier = Modifier.height(8.dp))
-            exercise.sets.forEach { set ->
-                Text(text = "${set.reps} reps x ${set.weight} kg")
+            exercise.sets.forEachIndexed { index, set ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(text = "${set.reps} reps x ${set.weight} kg")
+                    IconButton(onClick = {
+                        setToDelete = index
+                        showSetDeleteDialog = true
+                    }) {
+                        Icon(Icons.Filled.Delete, contentDescription = "Delete set")
+                    }
+                }
             }
             Spacer(modifier = Modifier.height(8.dp))
             Button(onClick = { showDialog = true }) {
@@ -129,13 +157,38 @@ fun ExerciseCard(exercise: Exercise) {
             }
         }
     }
+    ConfirmationDialog(
+        showDialog = showExerciseDeleteDialog,
+        onDismiss = { showExerciseDeleteDialog = false },
+        onConfirm = onExerciseDelete,
+        title = "Confirm Delete",
+        text = "Are you sure you want to delete this exercise?"
+    )
+
+    ConfirmationDialog(
+        showDialog = showSetDeleteDialog,
+        onDismiss = {
+            showSetDeleteDialog = false
+            setToDelete = null
+        },
+        onConfirm = {
+            setToDelete?.let {
+                onSetDelete(it)
+                showSetDeleteDialog = false
+                setToDelete = null
+            }
+        },
+        title = "Confirm Delete",
+        text = "Are you sure you want to delete this set?"
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun WorkoutScreen(workout: Workout, navController: NavController) {
+fun WorkoutScreen(workout: Workout, onWorkoutDelete: () -> Unit, navController: NavController) {
     var showDialog by remember { mutableStateOf(false) }
     var newExerciseName by remember { mutableStateOf("") }
+    var showWorkoutDeleteDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -159,12 +212,28 @@ fun WorkoutScreen(workout: Workout, navController: NavController) {
             item {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(text = "Name: ${workout.name}", style = MaterialTheme.typography.titleSmall)
-                    Text(text = "Date: ${workout.dateString}", style = MaterialTheme.typography.titleSmall)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(text = "Date: ${workout.dateString}", style = MaterialTheme.typography.titleSmall)
+                        IconButton(onClick = {
+                            showWorkoutDeleteDialog = true
+                        }) {
+                            Icon(Icons.Filled.Delete, contentDescription = "Delete Workout")
+                        }
+                    }
                     Spacer(modifier = Modifier.height(16.dp))
                 }
             }
             items(workout.exercises) { exercise ->
-                ExerciseCard(exercise)
+                ExerciseCard(exercise, onSetDelete = { index ->
+                    exercise.sets.removeAt(index)
+                },
+                onExerciseDelete = {
+                    workout.exercises.remove(exercise)
+                })
             }
         }
         if (showDialog) {
@@ -198,4 +267,14 @@ fun WorkoutScreen(workout: Workout, navController: NavController) {
             )
         }
     }
+    ConfirmationDialog(
+        showDialog = showWorkoutDeleteDialog,
+        onDismiss = { showWorkoutDeleteDialog = false },
+        onConfirm = {
+            onWorkoutDelete()
+            navController.popBackStack()
+        },
+        title = "Confirm Delete",
+        text = "Are you sure you want to delete this workout?"
+    )
 }

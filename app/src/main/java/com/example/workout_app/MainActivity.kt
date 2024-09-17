@@ -46,7 +46,7 @@ fun AppNavigation(workouts: MutableList<Workout>) {
             val workoutId = backStackEntry.arguments?.getString("workoutId")
             val workout = workouts.find { it.id.toString() == workoutId }
             if (workout != null) {
-                WorkoutScreen(workout, navController)
+                WorkoutScreen(workout, { workouts.remove(workout) } ,navController)
             }
         }
     }
