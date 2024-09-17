@@ -41,31 +41,32 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.google.gson.annotations.SerializedName
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.UUID
 
 data class Workout(
-    var name: String,
-    var id: UUID = UUID.randomUUID(),
-    val exercises: MutableList<Exercise> = mutableStateListOf(),
-    val date: Date = Date(),
-    val dateString: String = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(date)
+    @SerializedName("name") var name: String,
+    @SerializedName("id") var id: UUID = UUID.randomUUID(),
+    @SerializedName("exercises") val exercises: MutableList<Exercise> = mutableStateListOf(),
+    @SerializedName("date") val date: Date = Date(),
+    @SerializedName("dateString") val dateString: String = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(date)
 )
 
 data class Exercise(
-    val name: String,
-    val sets: MutableList<Set> = mutableStateListOf()
+    @SerializedName("name") val name: String,
+    @SerializedName("sets") val sets: MutableList<Set> = mutableStateListOf()
     )
 
 data class Set(
-    val reps: Int,
-    val weight: Double,
+    @SerializedName("reps") val reps: Int,
+    @SerializedName("weight") val weight: Double,
     )
 
 @Composable
-fun ExerciseCard(exercise: Exercise, onSetDelete: (Int) -> Unit, onExerciseDelete: () -> Unit) {
+fun ExerciseCard(exercise: Exercise, onSetDelete: (Int) -> Unit, onExerciseDelete: () -> Unit, save: () -> Unit) {
     var newReps by remember { mutableStateOf("") }
     var newWeight by remember { mutableStateOf("") }
     var showDialog by remember { mutableStateOf(false) }
@@ -141,6 +142,7 @@ fun ExerciseCard(exercise: Exercise, onSetDelete: (Int) -> Unit, onExerciseDelet
                             val reps = newReps.toIntOrNull() ?: 0
                             val weight = newWeight.toDoubleOrNull() ?: 0.0
                             exercise.sets.add(Set(reps, weight))
+                            save()
                             newReps = ""
                             newWeight = ""
                             showDialog = false
@@ -160,7 +162,11 @@ fun ExerciseCard(exercise: Exercise, onSetDelete: (Int) -> Unit, onExerciseDelet
     ConfirmationDialog(
         showDialog = showExerciseDeleteDialog,
         onDismiss = { showExerciseDeleteDialog = false },
-        onConfirm = onExerciseDelete,
+        onConfirm = {
+            onExerciseDelete()
+            save()
+            showExerciseDeleteDialog = false
+            },
         title = "Confirm Delete",
         text = "Are you sure you want to delete this exercise?"
     )
@@ -174,6 +180,7 @@ fun ExerciseCard(exercise: Exercise, onSetDelete: (Int) -> Unit, onExerciseDelet
         onConfirm = {
             setToDelete?.let {
                 onSetDelete(it)
+                save()
                 showSetDeleteDialog = false
                 setToDelete = null
             }
@@ -185,7 +192,7 @@ fun ExerciseCard(exercise: Exercise, onSetDelete: (Int) -> Unit, onExerciseDelet
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun WorkoutScreen(workout: Workout, onWorkoutDelete: () -> Unit, navController: NavController) {
+fun WorkoutScreen(workout: Workout, onWorkoutDelete: () -> Unit, navController: NavController, save: () -> Unit) {
     var showDialog by remember { mutableStateOf(false) }
     var newExerciseName by remember { mutableStateOf("") }
     var showWorkoutDeleteDialog by remember { mutableStateOf(false) }
@@ -233,7 +240,7 @@ fun WorkoutScreen(workout: Workout, onWorkoutDelete: () -> Unit, navController: 
                 },
                 onExerciseDelete = {
                     workout.exercises.remove(exercise)
-                })
+                }, save)
             }
         }
         if (showDialog) {
@@ -252,6 +259,7 @@ fun WorkoutScreen(workout: Workout, onWorkoutDelete: () -> Unit, navController: 
                     Button(onClick = {
                         if (newExerciseName.isNotBlank()) {
                             workout.exercises.add(Exercise(name = newExerciseName))
+                            save()
                             newExerciseName = ""
                             showDialog = false
                         }

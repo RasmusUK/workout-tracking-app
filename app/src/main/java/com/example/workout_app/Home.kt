@@ -18,18 +18,23 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import java.util.UUID
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(workouts: MutableList<Workout>, onWorkoutClick: (UUID) -> Unit) {
+fun HomeScreen(onWorkoutClick: (UUID) -> Unit, viewModel: WorkoutViewModel) {
     var showDialog by remember { mutableStateOf(false) }
     var newWorkoutName by remember { mutableStateOf("") }
 
@@ -43,7 +48,7 @@ fun HomeScreen(workouts: MutableList<Workout>, onWorkoutClick: (UUID) -> Unit) {
             }
         }
     ) { contentPadding ->
-        val sortedWorkouts = workouts.sortedByDescending { it.date }
+        val sortedWorkouts = viewModel.workouts.sortedByDescending { it.date }
         LazyColumn(modifier = Modifier
             .padding(contentPadding)
             .fillMaxSize()
@@ -67,7 +72,7 @@ fun HomeScreen(workouts: MutableList<Workout>, onWorkoutClick: (UUID) -> Unit) {
                 confirmButton = {
                     Button(onClick = {
                         if (newWorkoutName.isNotBlank()) {
-                            workouts.add(Workout(name = newWorkoutName))
+                            viewModel.addWorkout(Workout(name = newWorkoutName))
                             newWorkoutName = ""
                             showDialog = false
                         }

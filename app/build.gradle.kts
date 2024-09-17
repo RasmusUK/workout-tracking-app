@@ -50,6 +50,7 @@ android {
 }
 
 dependencies {
+    implementation(libs.gson)
     implementation(libs.androidx.navigation.compose.v240alpha10)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
