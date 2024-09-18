@@ -41,6 +41,7 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -192,7 +193,7 @@ fun ExerciseCard(exercise: Exercise, onSetDelete: (Int) -> Unit, onExerciseDelet
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun WorkoutScreen(workout: Workout, onWorkoutDelete: () -> Unit, navController: NavController, save: () -> Unit, exerciseOptions: List<String>) {
+fun WorkoutScreen(workout: Workout, onWorkoutDelete: () -> Unit, navController: NavController, save: () -> Unit, exerciseOptions: List<String>, viewModel: WorkoutViewModel) {
     var showDialog by remember { mutableStateOf(false) }
     var selectedExercise by remember { mutableStateOf("") }
     var showWorkoutDeleteDialog by remember { mutableStateOf(false) }
@@ -257,7 +258,16 @@ fun WorkoutScreen(workout: Workout, onWorkoutDelete: () -> Unit, navController: 
                 confirmButton = {
                     Button(onClick = {
                         if (selectedExercise.isNotBlank()) {
-                            workout.exercises.add(Exercise(name = selectedExercise.trim()))
+                            val name = selectedExercise.trim()
+                            val existingExercise = viewModel.getExistingExercise(name)
+                            if (existingExercise != null) {
+                                val gson = Gson()
+                                val exerciseCopy = gson.fromJson(gson.toJson(existingExercise), Exercise::class.java)
+                                workout.exercises.add(exerciseCopy)
+                            }
+                            else{
+                                workout.exercises.add(Exercise(name))
+                            }
                             save()
                             selectedExercise = ""
                             showDialog = false
