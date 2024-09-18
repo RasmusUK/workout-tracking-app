@@ -16,7 +16,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -37,6 +40,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -99,17 +103,74 @@ fun ExerciseCard(exercise: Exercise, onSetDelete: (Int) -> Unit, onExerciseDelet
             }
             Spacer(modifier = Modifier.height(8.dp))
             exercise.sets.forEachIndexed { index, set ->
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(text = "${set.reps} reps x ${set.weight} kg")
-                    IconButton(onClick = {
-                        setToDelete = index
-                        showSetDeleteDialog = true
-                    }) {
-                        Icon(Icons.Filled.Delete, contentDescription = "Delete set")
+                var editingSet by remember { mutableStateOf(false) }
+                var reps by remember { mutableStateOf(set.reps.toString()) }
+                var weight by remember { mutableStateOf(set.weight.toString()) }
+
+                if (editingSet) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(modifier = Modifier.weight(1f)) {
+                            TextField(
+                                value = reps,
+                                onValueChange = { reps = it },
+                                label = { Text("Reps") },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                modifier = Modifier.width(100.dp)
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            TextField(
+                                value = weight,
+                                onValueChange = { weight = it },
+                                label = { Text("Weight (kg)") },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                modifier = Modifier.width(100.dp)
+                            )
+                        }
+                        Row {
+                            IconButton(onClick = {
+                                val newReps = reps.toIntOrNull() ?: set.reps
+                                val newWeight = weight.toDoubleOrNull() ?: set.weight
+                                exercise.sets[index] = set.copy(reps = newReps, weight = newWeight)
+                                editingSet = false
+                                save()
+                            }) {
+                                Icon(
+                                    imageVector = Icons.Filled.Check,
+                                    contentDescription = "Save set",
+                                    tint = Color(0xFF006400)
+                                )
+                            }
+                            IconButton(onClick = { editingSet = false }) {
+                                Icon(
+                                    imageVector = Icons.Filled.Close,
+                                    contentDescription = "Cancel",
+                                    tint = Color.Red
+                                )
+                            }
+                        }
+                    }
+                } else {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(text = "${set.reps} reps x ${set.weight} kg")
+                        Row {
+                            IconButton(onClick = { editingSet = true }) {
+                                Icon(Icons.Filled.Edit, contentDescription = "Edit set")
+                            }
+                            IconButton(onClick = {
+                                setToDelete = index
+                                showSetDeleteDialog = true
+                            }) {
+                                Icon(Icons.Filled.Delete, contentDescription = "Delete set")
+                            }
+                        }
                     }
                 }
             }
