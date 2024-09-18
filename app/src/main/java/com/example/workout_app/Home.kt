@@ -25,11 +25,14 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.google.gson.Gson
+import java.util.Date
 import java.util.UUID
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -62,17 +65,32 @@ fun HomeScreen(onWorkoutClick: (UUID) -> Unit, viewModel: WorkoutViewModel) {
                 onDismissRequest = { showDialog = false },
                 title = { Text("New workout") },
                 text = {
-                    TextField(
-                        value = newWorkoutName,
-                        onValueChange = { newWorkoutName = it },
-                        label = { Text("Name") },
-                        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences)
+                    CustomDropdownMenu(
+                        options = viewModel.getAllWorkoutNames(),
+                        selectedOption = newWorkoutName,
+                        onOptionSelected = { newWorkoutName = it }
                     )
                 },
                 confirmButton = {
                     Button(onClick = {
                         if (newWorkoutName.isNotBlank()) {
-                            viewModel.addWorkout(Workout(name = newWorkoutName))
+                            var name = newWorkoutName.trim()
+                            val existingWorkout = viewModel.getExistingWorkout(name)
+                            if (existingWorkout != null) {
+                                val gson = Gson()
+                                var exercises = mutableStateListOf<Exercise>()
+                                if (existingWorkout.exercises.isNotEmpty()) {
+                                    val exerciseList = gson.fromJson(
+                                        gson.toJson(existingWorkout.exercises),
+                                        Array<Exercise>::class.java
+                                    )
+                                    exercises.addAll(exerciseList)
+                                }
+                                viewModel.addWorkout(Workout(name = name, exercises = exercises))
+                            }
+                            else{
+                                viewModel.addWorkout(Workout(name = newWorkoutName))
+                            }
                             newWorkoutName = ""
                             showDialog = false
                         }

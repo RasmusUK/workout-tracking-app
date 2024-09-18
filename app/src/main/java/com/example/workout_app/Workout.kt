@@ -56,7 +56,7 @@ data class Workout(
     @SerializedName("name") var name: String,
     @SerializedName("id") var id: UUID = UUID.randomUUID(),
     @SerializedName("exercises") val exercises: MutableList<Exercise> = mutableStateListOf(),
-    @SerializedName("date") val date: Date = Date(),
+    @SerializedName("date") var date: Date = Date(),
     @SerializedName("dateString") val dateString: String = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(date)
 )
 

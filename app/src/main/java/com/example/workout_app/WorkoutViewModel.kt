@@ -37,6 +37,16 @@ class WorkoutViewModel(private val storage: WorkoutStorage) : ViewModel() {
         return _workouts.flatMap { it.exercises }.map { it.name }.distinct()
     }
 
+    fun getAllWorkoutNames() : List<String> {
+        return _workouts.map { it.name }.distinct()
+    }
+
+    fun getExistingWorkout(name: String) : Workout? {
+        return _workouts
+            .sortedByDescending { it.date }
+            .find { it.name == name }
+    }
+
     fun getExistingExercise(name: String) : Exercise? {
         return _workouts.sortedByDescending { it.date }
             .flatMap { workout -> workout.exercises.map { exercise -> workout to exercise } }
